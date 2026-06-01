@@ -1,0 +1,282 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+
+type SummaryContent = {
+  client: { name: string; phone: string | null; meeting_date: string }
+  topics_discussed: string[]
+  financial_profile: {
+    pension: string | null
+    free_capital: string | null
+    existing_products: Array<{
+      type: string; company: string | null
+      monthly: number | null; total: number | null; coverage: number | null
+    }>
+  }
+  recommendations: string[]
+  tax_notes: string[]
+  action_items: Array<{ task: string; due_date: string; owner: 'agent' | 'client' }>
+}
+
+export default function MeetingPage() {
+  const { id } = useParams<{ id: string }>()
+  const router = useRouter()
+  const supabase = createClient()
+
+  const [status, setStatus] = useState<string>('loading')
+  const [content, setContent] = useState<SummaryContent | null>(null)
+  const [summaryId, setSummaryId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    loadMeeting()
+  }, [id])
+
+  async function loadMeeting() {
+    const { data: meeting } = await supabase
+      .from('meetings')
+      .select('id, status, summaries(id, content)')
+      .eq('id', id)
+      .single()
+
+    if (!meeting) { setError('פגישה לא נמצאה'); return }
+
+    const summaries = meeting.summaries as any[]
+
+    if (summaries?.length > 0) {
+      setContent(summaries[0].content as SummaryContent)
+      setSummaryId(summaries[0].id)
+      setStatus('ready')
+    } else if (meeting.status === 'summarizing') {
+      setStatus('summarizing')
+      await generateSummary()
+    } else {
+      setStatus(meeting.status)
+    }
+  }
+
+  async function generateSummary() {
+    const res = await fetch('/api/summaries/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ meeting_id: id }),
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      setError(err.error || 'יצירת סיכום נכשלה')
+      setStatus('error')
+      return
+    }
+
+    const { summary_id, content } = await res.json()
+    setContent(content as SummaryContent)
+    setSummaryId(summary_id)
+    setStatus('ready')
+  }
+
+  async function saveChanges() {
+    if (!summaryId || !content) return
+    setSaving(true)
+    await supabase
+      .from('summaries')
+      .update({ content, edited_by_agent: true })
+      .eq('id', summaryId)
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  function updateRecommendation(i: number, val: string) {
+    setContent(c => c ? { ...c, recommendations: c.recommendations.map((r, j) => j === i ? val : r) } : c)
+  }
+
+  function updateActionItem(i: number, field: string, val: string) {
+    setContent(c => c ? {
+      ...c,
+      action_items: c.action_items.map((a, j) => j === i ? { ...a, [field]: val } : a)
+    } : c)
+  }
+
+  // ── States ─────────────────────────────────────
+
+  if (status === 'loading' || status === 'summarizing') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50" dir="rtl">
+        <p className="text-4xl mb-4">🤖</p>
+        <p className="font-semibold text-gray-800 mb-2">מנתח ומסכם...</p>
+        <p className="text-sm text-gray-400">Claude Sonnet מעבד את הפגישה</p>
+        <div className="mt-6 w-48 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div className="h-full bg-blue-500 rounded-full animate-pulse w-3/4" />
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gray-50" dir="rtl">
+        <p className="text-4xl mb-3">❌</p>
+        <p className="text-red-600 text-center">{error}</p>
+        <button onClick={() => router.push('/dashboard')} className="mt-4 text-sm text-blue-600 underline">
+          חזור ל-Dashboard
+        </button>
+      </div>
+    )
+  }
+
+  if (!content) return null
+
+  // ── Summary Editor ─────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-gray-50" dir="rtl">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-10 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push('/dashboard')} className="text-gray-500 text-lg">→</button>
+          <div>
+            <h1 className="font-semibold text-gray-900 text-sm">{content.client.name}</h1>
+            <p className="text-xs text-gray-400">{content.client.meeting_date}</p>
+          </div>
+        </div>
+        <button
+          onClick={saveChanges}
+          disabled={saving}
+          className="text-sm bg-blue-600 text-white px-4 py-1.5 rounded-full disabled:opacity-50"
+        >
+          {saved ? '✓ נשמר' : saving ? 'שומר...' : 'שמור'}
+        </button>
+      </header>
+
+      <main className="max-w-2xl mx-auto px-4 py-5 space-y-5 pb-28">
+
+        {/* נושאים */}
+        <section className="bg-white rounded-2xl border border-gray-200 p-4">
+          <h2 className="font-semibold text-gray-700 text-sm mb-2">נושאים שנדונו</h2>
+          <div className="flex flex-wrap gap-2">
+            {content.topics_discussed.map((t, i) => (
+              <span key={i} className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full">
+                {t}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* מוצרים קיימים */}
+        {content.financial_profile.existing_products.length > 0 && (
+          <section className="bg-white rounded-2xl border border-gray-200 p-4">
+            <h2 className="font-semibold text-gray-700 text-sm mb-3">מוצרים קיימים</h2>
+            <div className="space-y-2">
+              {content.financial_profile.existing_products.map((p, i) => (
+                <div key={i} className="flex justify-between items-start text-sm border-b border-gray-100 pb-2 last:border-0">
+                  <div>
+                    <p className="font-medium">{p.type}</p>
+                    {p.company && <p className="text-xs text-gray-400">{p.company}</p>}
+                  </div>
+                  <div className="text-left text-xs text-gray-500 space-y-0.5">
+                    {p.monthly != null && <p>{p.monthly.toLocaleString()} ₪/חודש</p>}
+                    {p.total != null && <p>סה״כ: {p.total.toLocaleString()} ₪</p>}
+                    {p.coverage != null && <p>כיסוי: {p.coverage.toLocaleString()} ₪</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {content.financial_profile.pension && (
+              <p className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
+                <span className="font-medium">פנסיה: </span>{content.financial_profile.pension}
+              </p>
+            )}
+            {content.financial_profile.free_capital && (
+              <p className="text-xs text-gray-500 mt-1">
+                <span className="font-medium">כסף פנוי: </span>{content.financial_profile.free_capital}
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* המלצות ✏️ */}
+        <section className="bg-white rounded-2xl border border-gray-200 p-4">
+          <h2 className="font-semibold text-gray-700 text-sm mb-3">המלצות הסוכן ✏️</h2>
+          <div className="space-y-2">
+            {content.recommendations.map((r, i) => (
+              <textarea
+                key={i}
+                value={r}
+                onChange={e => updateRecommendation(i, e.target.value)}
+                rows={2}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* הערות מס */}
+        {content.tax_notes.length > 0 && (
+          <section className="bg-amber-50 rounded-2xl border border-amber-200 p-4">
+            <h2 className="font-semibold text-amber-800 text-sm mb-2">הערות מס</h2>
+            <ul className="space-y-1">
+              {content.tax_notes.map((t, i) => (
+                <li key={i} className="text-xs text-amber-700 flex gap-2">
+                  <span>•</span><span>{t}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* משימות ✏️ */}
+        <section className="bg-white rounded-2xl border border-gray-200 p-4">
+          <h2 className="font-semibold text-gray-700 text-sm mb-3">משימות וצעדי המשך ✏️</h2>
+          <div className="space-y-3">
+            {content.action_items.map((a, i) => (
+              <div key={i} className="flex gap-2 items-start">
+                <span className="text-lg mt-0.5">{a.owner === 'agent' ? '👤' : '🧑‍💼'}</span>
+                <div className="flex-1 space-y-1">
+                  <input
+                    value={a.task}
+                    onChange={e => updateActionItem(i, 'task', e.target.value)}
+                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                  <div className="flex gap-2 text-xs">
+                    <span className={`px-2 py-0.5 rounded-full ${a.owner === 'agent' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                      {a.owner === 'agent' ? 'סוכן' : 'לקוח'}
+                    </span>
+                    <input
+                      type="date"
+                      value={a.due_date}
+                      onChange={e => updateActionItem(i, 'due_date', e.target.value)}
+                      className="border border-gray-200 rounded px-1.5 py-0.5 text-xs focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* Bottom bar */}
+      <div className="fixed bottom-0 right-0 left-0 bg-white border-t border-gray-200 p-4 flex gap-3 max-w-2xl mx-auto">
+        <button
+          onClick={saveChanges}
+          disabled={saving}
+          className="flex-1 bg-blue-600 text-white rounded-xl py-3 font-semibold text-sm disabled:opacity-50"
+        >
+          {saved ? '✓ נשמר!' : saving ? 'שומר...' : 'אשר ושמור'}
+        </button>
+        <button
+          disabled
+          className="flex-1 border border-gray-300 text-gray-400 rounded-xl py-3 font-semibold text-sm cursor-not-allowed"
+          title="בקרוב"
+        >
+          הורד PDF
+        </button>
+      </div>
+    </div>
+  )
+}
