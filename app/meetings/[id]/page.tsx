@@ -30,6 +30,7 @@ export default function MeetingPage() {
   const [summaryId, setSummaryId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [generatingPdf, setGeneratingPdf] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -93,6 +94,21 @@ export default function MeetingPage() {
 
   function updateRecommendation(i: number, val: string) {
     setContent(c => c ? { ...c, recommendations: c.recommendations.map((r, j) => j === i ? val : r) } : c)
+  }
+
+  async function downloadPdf() {
+    if (!summaryId) return
+    setGeneratingPdf(true)
+    const res = await fetch('/api/summaries/pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ summary_id: summaryId }),
+    })
+    if (res.ok) {
+      const { pdf_url } = await res.json()
+      window.open(pdf_url, '_blank')
+    }
+    setGeneratingPdf(false)
   }
 
   function updateActionItem(i: number, field: string, val: string) {
@@ -270,11 +286,11 @@ export default function MeetingPage() {
           {saved ? '✓ נשמר!' : saving ? 'שומר...' : 'אשר ושמור'}
         </button>
         <button
-          disabled
-          className="flex-1 border border-gray-300 text-gray-400 rounded-xl py-3 font-semibold text-sm cursor-not-allowed"
-          title="בקרוב"
+          onClick={downloadPdf}
+          disabled={generatingPdf}
+          className="flex-1 border border-blue-600 text-blue-600 rounded-xl py-3 font-semibold text-sm disabled:opacity-50"
         >
-          הורד PDF
+          {generatingPdf ? '⏳ מייצר...' : '📄 הורד PDF'}
         </button>
       </div>
     </div>
