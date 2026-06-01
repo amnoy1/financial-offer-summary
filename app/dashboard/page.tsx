@@ -41,7 +41,7 @@ export default async function DashboardPage() {
           <h1 className="font-bold text-gray-900">סיכום פגישות</h1>
           {agent && (
             <p className="text-xs text-gray-500">
-              {agent.name} | {(agent.agency as { name: string })?.name}
+              {agent.name} | {(agent.agency as unknown as { name: string })?.name}
             </p>
           )}
         </div>

@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'תמליל לא נמצא' }, { status: 404 })
   }
 
-  const client = meeting.client as { name: string; phone: string | null } | null
+  const client = meeting.client as unknown as { name: string; phone: string | null } | null
   const meetingDate = new Date(meeting.meeting_date).toISOString().split('T')[0]
 
   // שלח ל-Claude

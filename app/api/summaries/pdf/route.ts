@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       agencyName: agency?.name ?? 'סוכנות',
       agentName: agent?.name ?? '',
       logoUrl: agency?.logo_url ?? null,
-    })
+    }) as any
   )
 
   // שמור PDF ל-Storage
