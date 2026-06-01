@@ -34,7 +34,10 @@ export default function MeetingPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    loadMeeting()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) router.push('/login')
+      else loadMeeting()
+    })
   }, [id])
 
   async function loadMeeting() {

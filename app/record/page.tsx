@@ -31,6 +31,13 @@ export default function RecordPage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
+  // בדיקת auth
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) router.push('/login')
+    })
+  }, [])
+
   // שלוף לקוחות
   useEffect(() => {
     supabase.from('clients').select('id, name').order('name').then(({ data }) => {
