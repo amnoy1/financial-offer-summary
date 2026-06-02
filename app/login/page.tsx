@@ -20,7 +20,7 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError('אימייל או סיסמה שגויים')
+      setError(error.message)
       setLoading(false)
       return
     }
