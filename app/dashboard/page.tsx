@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import DashboardHeader from '@/components/DashboardHeader'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -34,23 +35,11 @@ export default async function DashboardPage() {
               יציאה
             </button>
           </form>
-          <div className="flex items-center gap-3">
-            {agency?.logo_url && (
-              <img
-                src={agency.logo_url}
-                alt={agency.name ?? ''}
-                className="w-10 h-10 object-contain rounded-lg border border-gray-100"
-              />
-            )}
-            <div className="text-right">
-              <h1 className="font-bold text-gray-900 text-base leading-tight">
-                {agency?.name ?? 'סיכום פגישות'}
-              </h1>
-              {agent?.name && (
-                <p className="text-xs text-gray-400">{agent.name}</p>
-              )}
-            </div>
-          </div>
+          <DashboardHeader
+            agencyName={agency?.name ?? null}
+            agentName={agent?.name ?? null}
+            logoUrl={agency?.logo_url ?? null}
+          />
         </div>
       </header>
 
