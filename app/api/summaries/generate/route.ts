@@ -51,10 +51,17 @@ export async function POST(request: NextRequest) {
 
   const rawText = message.content[0].type === 'text' ? message.content[0].text : ''
 
-  // נקה JSON מתוך התגובה (אם יש ```)
-  const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/) ||
-                    rawText.match(/```\s*([\s\S]*?)\s*```/)
-  const jsonText = jsonMatch ? jsonMatch[1] : rawText.trim()
+  // חלץ JSON מהתגובה — נסה מספר שיטות
+  function extractJSON(text: string): string {
+    const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+    if (codeBlock) return codeBlock[1].trim()
+    const start = text.indexOf('{')
+    const end = text.lastIndexOf('}')
+    if (start !== -1 && end > start) return text.slice(start, end + 1)
+    return text.trim()
+  }
+
+  const jsonText = extractJSON(rawText)
 
   let content: object
   try {
