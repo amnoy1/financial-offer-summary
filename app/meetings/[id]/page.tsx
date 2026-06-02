@@ -228,7 +228,7 @@ export default function MeetingPage() {
                 value={r}
                 onChange={e => updateRecommendation(i, e.target.value)}
                 rows={2}
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
+                className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
             ))}
           </div>
@@ -259,7 +259,7 @@ export default function MeetingPage() {
                   <input
                     value={a.task}
                     onChange={e => updateActionItem(i, 'task', e.target.value)}
-                    className="w-full text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
                   <div className="flex gap-2 text-xs">
                     <span className={`px-2 py-0.5 rounded-full ${a.owner === 'agent' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
@@ -269,7 +269,7 @@ export default function MeetingPage() {
                       type="date"
                       value={a.due_date}
                       onChange={e => updateActionItem(i, 'due_date', e.target.value)}
-                      className="border border-gray-200 rounded px-1.5 py-0.5 text-xs focus:outline-none"
+                      className="border border-gray-200 rounded px-1.5 py-0.5 text-xs text-gray-900 focus:outline-none"
                     />
                   </div>
                 </div>
