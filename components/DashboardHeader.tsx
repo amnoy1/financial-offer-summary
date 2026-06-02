@@ -29,24 +29,31 @@ export default function DashboardHeader({ agencyName, agentName, logoUrl: initia
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-4">
       <div className="relative group">
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           title="לחץ לשינוי לוגו"
-          className="relative w-10 h-10 rounded-lg border border-gray-100 overflow-hidden hover:opacity-80 transition-opacity focus:outline-none"
+          className="relative w-14 h-14 rounded-xl border border-gray-200 overflow-hidden hover:opacity-80 transition-opacity focus:outline-none shadow-sm"
         >
           {logoUrl ? (
-            <img src={logoUrl} alt={agencyName ?? ''} className="w-full h-full object-contain" />
+            <img src={logoUrl} alt={agencyName ?? ''} className="w-full h-full object-contain p-1" />
           ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-lg">
-              {uploading ? '⏳' : '🏢'}
+            <div className="w-full h-full bg-gray-50 flex flex-col items-center justify-center text-gray-400 gap-0.5">
+              {uploading ? (
+                <span className="text-xl">⏳</span>
+              ) : (
+                <>
+                  <span className="text-xl">🏢</span>
+                  <span className="text-[9px] text-gray-300">לוגו</span>
+                </>
+              )}
             </div>
           )}
           {!uploading && (
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="text-white text-base">📷</span>
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+              <span className="text-white text-lg">📷</span>
             </div>
           )}
         </button>
@@ -59,10 +66,10 @@ export default function DashboardHeader({ agencyName, agentName, logoUrl: initia
         />
       </div>
       <div className="text-right">
-        <h1 className="font-bold text-gray-900 text-base leading-tight">
+        <h1 className="font-bold text-gray-900 text-lg leading-tight">
           {agencyName ?? 'סיכום פגישות'}
         </h1>
-        {agentName && <p className="text-xs text-gray-400">{agentName}</p>}
+        {agentName && <p className="text-sm text-gray-400 mt-0.5">{agentName}</p>}
       </div>
     </div>
   )
