@@ -10,9 +10,11 @@ export default async function DashboardPage() {
 
   const { data: agent } = await supabase
     .from('agents')
-    .select('name, agency:agencies(name)')
+    .select('name, agency:agencies(name, logo_url)')
     .eq('email', user.email!)
     .single()
+
+  const agency = (agent?.agency as unknown as { name: string; logo_url: string | null }) ?? null
 
   const { data: clients } = await supabase
     .from('clients')
@@ -25,20 +27,31 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-        <div>
-          <h1 className="font-bold text-gray-900">סיכום פגישות</h1>
-          {agent && (
-            <p className="text-xs text-gray-500">
-              {agent.name} | {(agent.agency as unknown as { name: string })?.name}
-            </p>
-          )}
+      <header className="bg-white border-b border-gray-200 px-4 py-4">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <form action="/api/auth/signout" method="post">
+            <button className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5">
+              יציאה
+            </button>
+          </form>
+          <div className="flex items-center gap-3">
+            {agency?.logo_url && (
+              <img
+                src={agency.logo_url}
+                alt={agency.name ?? ''}
+                className="w-10 h-10 object-contain rounded-lg border border-gray-100"
+              />
+            )}
+            <div className="text-right">
+              <h1 className="font-bold text-gray-900 text-base leading-tight">
+                {agency?.name ?? 'סיכום פגישות'}
+              </h1>
+              {agent?.name && (
+                <p className="text-xs text-gray-400">{agent.name}</p>
+              )}
+            </div>
+          </div>
         </div>
-        <form action="/api/auth/signout" method="post">
-          <button className="text-xs text-gray-500 hover:text-gray-700">
-            יציאה
-          </button>
-        </form>
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">

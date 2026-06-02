@@ -1,4 +1,9 @@
-'use client'
+const fs = require('fs')
+const path = require('path')
+
+const filePath = path.join(__dirname, '..', 'app', 'record', 'page.tsx')
+
+const content = `'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -62,7 +67,7 @@ export default function RecordPage() {
   }, [step])
 
   const formatTime = (s: number) =>
-    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+    \`\${Math.floor(s / 60).toString().padStart(2, '0')}:\${(s % 60).toString().padStart(2, '0')}\`
 
   const filteredClients = clients.filter(c =>
     clientName.length > 0 && c.name.includes(clientName)
@@ -123,9 +128,9 @@ export default function RecordPage() {
         throw new Error(errData.error || 'transcribe failed')
       }
       setStep('done')
-      setTimeout(() => router.push(`/meetings/${meeting_id}`), 800)
+      setTimeout(() => router.push(\`/meetings/\${meeting_id}\`), 800)
     } catch (err: any) {
-      setError(`שגיאה בעיבוד: ${err.message}`)
+      setError(\`שגיאה בעיבוד: \${err.message}\`)
       setStep('error')
     }
   }, [mode, clientId, clientName, selectedAgentId, router])
@@ -150,9 +155,9 @@ export default function RecordPage() {
       }
       const { meeting_id } = await res.json()
       setStep('done')
-      setTimeout(() => router.push(`/meetings/${meeting_id}`), 500)
+      setTimeout(() => router.push(\`/meetings/\${meeting_id}\`), 500)
     } catch (err: any) {
-      setError(`שגיאה: ${err.message}`)
+      setError(\`שגיאה: \${err.message}\`)
       setStep('error')
     }
   }
@@ -179,7 +184,7 @@ export default function RecordPage() {
             return (
               <div key={s.key} className="flex items-center gap-3">
                 <span className="text-lg w-6">{done ? '✅' : active ? '🔄' : '⏳'}</span>
-                <span className={`text-sm ${active ? 'font-semibold text-blue-700' : 'text-gray-400'}`}>{s.label}</span>
+                <span className={\`text-sm \${active ? 'font-semibold text-blue-700' : 'text-gray-400'}\`}>{s.label}</span>
               </div>
             )
           })}
@@ -250,7 +255,7 @@ export default function RecordPage() {
               ['text', '📋 הזן טקסט', 'הדבק סיכום'],
             ] as const).map(([val, title, desc]) => (
               <button key={val} onClick={() => setMode(val)}
-                className={`p-3 rounded-xl border-2 text-right transition-colors ${mode === val ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
+                className={\`p-3 rounded-xl border-2 text-right transition-colors \${mode === val ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}\`}>
                 <p className="text-xs font-medium">{title}</p>
                 <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
               </button>
@@ -283,3 +288,7 @@ export default function RecordPage() {
     </div>
   )
 }
+`
+
+fs.writeFileSync(filePath, content, 'utf8')
+console.log('Record page updated successfully')
