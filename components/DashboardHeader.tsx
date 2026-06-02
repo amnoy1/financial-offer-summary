@@ -35,7 +35,7 @@ export default function DashboardHeader({ agencyName, agentName, logoUrl: initia
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           title="לחץ לשינוי לוגו"
-          className="relative w-14 h-14 rounded-xl border border-gray-200 overflow-hidden hover:opacity-80 transition-opacity focus:outline-none shadow-sm"
+          className="relative w-[70px] h-[70px] rounded-xl border border-gray-200 overflow-hidden hover:opacity-80 transition-opacity focus:outline-none shadow-sm"
         >
           {logoUrl ? (
             <img src={logoUrl} alt={agencyName ?? ''} className="w-full h-full object-contain p-1" />

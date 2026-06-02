@@ -39,8 +39,8 @@ const styles = StyleSheet.create({
     color: '#1d4ed8',
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 75,
+    height: 75,
     objectFit: 'contain',
   },
   // Title
