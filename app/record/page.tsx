@@ -107,7 +107,10 @@ export default function RecordPage() {
         method: 'POST',
         body: formData,
       })
-      if (!uploadRes.ok) throw new Error('upload')
+      if (!uploadRes.ok) {
+        const errData = await uploadRes.json().catch(() => ({}))
+        throw new Error(errData.error || `upload ${uploadRes.status}`)
+      }
       const { meeting_id } = await uploadRes.json()
 
       setStep('transcribing')
@@ -117,7 +120,10 @@ export default function RecordPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ meeting_id }),
       })
-      if (!transcribeRes.ok) throw new Error('transcribe')
+      if (!transcribeRes.ok) {
+        const errData = await transcribeRes.json().catch(() => ({}))
+        throw new Error(errData.error || `transcribe ${transcribeRes.status}`)
+      }
 
       setStep('done')
       setTimeout(() => router.push(`/meetings/${meeting_id}`), 800)
