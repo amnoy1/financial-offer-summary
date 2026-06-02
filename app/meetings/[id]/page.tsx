@@ -47,40 +47,49 @@ export default function MeetingPage() {
       .eq('id', id)
       .single()
 
-    if (!meeting) { setError('פגישה לא נמצאה'); return }
+    if (!meeting) { setError('פגישה לא נמצאה'); setStatus('error'); return }
 
-    const summaries = meeting.summaries as any[]
+    const summaries = (meeting.summaries as any[]) ?? []
 
-    if (summaries?.length > 0) {
+    if (summaries.length > 0) {
+      // סיכום קיים — טוען מה-DB ישירות, ללא קריאה ל-Claude
       setContent(summaries[0].content as SummaryContent)
       setSummaryId(summaries[0].id)
       setStatus('ready')
     } else if (meeting.status === 'summarizing') {
+      // פגישה חדשה שעדיין לא סוכמה — הפעל Claude
       setStatus('summarizing')
       await generateSummary()
     } else {
-      setStatus(meeting.status)
+      // סטטוס אחר (ready ללא סיכום, error וכו') — הצג שגיאה
+      setError('לא נמצא סיכום לפגישה זו')
+      setStatus('error')
     }
   }
 
   async function generateSummary() {
-    const res = await fetch('/api/summaries/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ meeting_id: id }),
-    })
+    try {
+      const res = await fetch('/api/summaries/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meeting_id: id }),
+      })
 
-    if (!res.ok) {
-      const err = await res.json()
-      setError(err.error || 'יצירת סיכום נכשלה')
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        setError(err.error || 'יצירת סיכום נכשלה')
+        setStatus('error')
+        return
+      }
+
+      const { summary_id, content } = await res.json()
+      setContent(content as SummaryContent)
+      setSummaryId(summary_id)
+      setStatus('ready')
+    } catch {
+      setError('שגיאת רשת — לא הצלחנו ליצור סיכום')
       setStatus('error')
-      return
     }
-
-    const { summary_id, content } = await res.json()
-    setContent(content as SummaryContent)
-    setSummaryId(summary_id)
-    setStatus('ready')
   }
 
   async function saveChanges() {
@@ -123,7 +132,15 @@ export default function MeetingPage() {
 
   // ── States ─────────────────────────────────────
 
-  if (status === 'loading' || status === 'summarizing') {
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50" dir="rtl">
+        <p className="text-gray-400 text-sm">טוען...</p>
+      </div>
+    )
+  }
+
+  if (status === 'summarizing') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50" dir="rtl">
         <p className="text-4xl mb-4">🤖</p>
