@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   // שלח ל-Claude
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 2048,
+    max_tokens: 4096,
     system: FINANCIAL_SYSTEM_PROMPT,
     messages: [
       {
@@ -66,7 +66,8 @@ export async function POST(request: NextRequest) {
   let content: object
   try {
     content = JSON.parse(jsonText)
-  } catch {
+  } catch (parseErr) {
+    console.error('[generate] JSON parse failed. Raw Claude response:', rawText)
     return NextResponse.json({ error: 'Claude החזיר JSON לא תקין', raw: rawText }, { status: 500 })
   }
 
