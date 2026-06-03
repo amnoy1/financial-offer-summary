@@ -33,6 +33,8 @@ export default function MeetingPage() {
   const [saved, setSaved] = useState(false)
   const [generatingPdf, setGeneratingPdf] = useState(false)
   const [error, setError] = useState('')
+  const [includeTaxNotes, setIncludeTaxNotes] = useState(true)
+  const [includeActionItems, setIncludeActionItems] = useState(true)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -97,9 +99,14 @@ export default function MeetingPage() {
   async function saveChanges() {
     if (!summaryId || !content) return
     setSaving(true)
+    const savedContent = {
+      ...content,
+      tax_notes: (meetingType === 'pre_treatment' && !includeTaxNotes) ? [] : content.tax_notes,
+      action_items: (meetingType === 'pre_treatment' && !includeActionItems) ? [] : content.action_items,
+    }
     await supabase
       .from('summaries')
-      .update({ content, edited_by_agent: true })
+      .update({ content: savedContent, edited_by_agent: true })
       .eq('id', summaryId)
     setSaving(false)
     setSaved(true)
@@ -206,7 +213,9 @@ export default function MeetingPage() {
 
         {/* נושאים */}
         <section className="bg-white rounded-2xl border border-gray-200 p-4">
-          <h2 className="font-semibold text-gray-700 text-sm mb-2">נושאים שנדונו</h2>
+          <h2 className="font-semibold text-gray-700 text-sm mb-2">
+            {meetingType === 'pre_treatment' ? 'נושאים שנבדקו' : 'נושאים שנדונו'}
+          </h2>
           <div className="flex flex-wrap gap-2">
             {content.topics_discussed.map((t, i) => (
               <span key={i} className="bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full">
@@ -224,10 +233,10 @@ export default function MeetingPage() {
               {content.financial_profile.existing_products.map((p, i) => (
                 <div key={i} className="flex justify-between items-start text-sm border-b border-gray-100 pb-2 last:border-0">
                   <div>
-                    <p className="font-medium">{p.type}</p>
-                    {p.company && <p className="text-xs text-gray-400">{p.company}</p>}
+                    <p className="font-semibold text-gray-900">{p.type}</p>
+                    {p.company && <p className="text-xs text-gray-600 font-medium">{p.company}</p>}
                   </div>
-                  <div className="text-left text-xs text-gray-500 space-y-0.5">
+                  <div className="text-left text-xs text-gray-700 font-medium space-y-0.5">
                     {p.monthly != null && <p>{p.monthly.toLocaleString()} ₪/חודש</p>}
                     {p.total != null && <p>סה״כ: {p.total.toLocaleString()} ₪</p>}
                     {p.coverage != null && <p>כיסוי: {p.coverage.toLocaleString()} ₪</p>}
@@ -248,40 +257,70 @@ export default function MeetingPage() {
           </section>
         )}
 
-        {/* המלצות ✏️ */}
-        <section className="bg-white rounded-2xl border border-gray-200 p-4">
-          <h2 className="font-semibold text-gray-700 text-sm mb-3">המלצות הסוכן ✏️</h2>
-          <div className="space-y-2">
-            {content.recommendations.map((r, i) => (
-              <textarea
-                key={i}
-                value={r}
-                onChange={e => updateRecommendation(i, e.target.value)}
-                rows={2}
-                className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
-              />
-            ))}
-          </div>
-        </section>
+        {/* המלצות ✏️ — hidden for pre_treatment */}
+        {meetingType !== 'pre_treatment' && (
+          <section className="bg-white rounded-2xl border border-gray-200 p-4">
+            <h2 className="font-semibold text-gray-700 text-sm mb-3">המלצות הסוכן ✏️</h2>
+            <div className="space-y-2">
+              {content.recommendations.map((r, i) => (
+                <textarea
+                  key={i}
+                  value={r}
+                  onChange={e => updateRecommendation(i, e.target.value)}
+                  rows={2}
+                  className="w-full text-sm text-gray-900 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* הערות מס */}
         {content.tax_notes.length > 0 && (
           <section className="bg-amber-50 rounded-2xl border border-amber-200 p-4">
-            <h2 className="font-semibold text-amber-800 text-sm mb-2">הערות מס</h2>
-            <ul className="space-y-1">
-              {content.tax_notes.map((t, i) => (
-                <li key={i} className="text-xs text-amber-700 flex gap-2">
-                  <span>•</span><span>{t}</span>
-                </li>
-              ))}
-            </ul>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-semibold text-amber-800 text-sm">הערות מס</h2>
+              {meetingType === 'pre_treatment' && (
+                <label className="flex items-center gap-1.5 text-xs text-amber-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeTaxNotes}
+                    onChange={e => setIncludeTaxNotes(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-amber-600"
+                  />
+                  כלול בסיכום
+                </label>
+              )}
+            </div>
+            {includeTaxNotes && (
+              <ul className="space-y-1">
+                {content.tax_notes.map((t, i) => (
+                  <li key={i} className="text-xs text-amber-700 flex gap-2">
+                    <span>•</span><span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         )}
 
         {/* משימות ✏️ */}
         <section className="bg-white rounded-2xl border border-gray-200 p-4">
-          <h2 className="font-semibold text-gray-700 text-sm mb-3">משימות וצעדי המשך ✏️</h2>
-          <div className="space-y-3">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-gray-700 text-sm">משימות וצעדי המשך ✏️</h2>
+            {meetingType === 'pre_treatment' && (
+              <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={includeActionItems}
+                  onChange={e => setIncludeActionItems(e.target.checked)}
+                  className="w-3.5 h-3.5 accent-blue-600"
+                />
+                כלול בסיכום
+              </label>
+            )}
+          </div>
+          {includeActionItems && <div className="space-y-3">
             {content.action_items.map((a, i) => (
               <div key={i} className="flex gap-2 items-start">
                 <span className="text-lg mt-0.5">{a.owner === 'agent' ? '👤' : '🧑‍💼'}</span>
@@ -305,7 +344,7 @@ export default function MeetingPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </div>}
         </section>
       </main>
 
