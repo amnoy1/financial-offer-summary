@@ -139,6 +139,20 @@ export default function MeetingPage() {
     } : c)
   }
 
+  function updateProduct(i: number, field: string, val: string) {
+    setContent(c => c ? {
+      ...c,
+      financial_profile: {
+        ...c.financial_profile,
+        existing_products: c.financial_profile.existing_products.map((p, j) =>
+          j === i ? { ...p, [field]: field === 'monthly' || field === 'total' || field === 'coverage'
+            ? (val === '' ? null : Number(val))
+            : val } : p
+        ),
+      },
+    } : c)
+  }
+
   // ── States ─────────────────────────────────────
 
   if (status === 'loading') {
@@ -231,29 +245,76 @@ export default function MeetingPage() {
             <h2 className="font-semibold text-gray-700 text-sm mb-3">מוצרים קיימים</h2>
             <div className="space-y-2">
               {content.financial_profile.existing_products.map((p, i) => (
-                <div key={i} className="flex justify-between items-start text-sm border-b border-gray-100 pb-2 last:border-0">
-                  <div>
-                    <p className="font-semibold text-gray-900">{p.type}</p>
-                    {p.company && <p className="text-xs text-gray-600 font-medium">{p.company}</p>}
+                <div key={i} className="border-b border-gray-100 pb-3 last:border-0 space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      value={p.type}
+                      onChange={e => updateProduct(i, 'type', e.target.value)}
+                      placeholder="סוג מוצר"
+                      className="flex-1 text-sm font-semibold text-gray-900 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    />
+                    <input
+                      value={p.company ?? ''}
+                      onChange={e => updateProduct(i, 'company', e.target.value)}
+                      placeholder="חברה"
+                      className="flex-1 text-sm text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    />
                   </div>
-                  <div className="text-left text-xs text-gray-700 font-medium space-y-0.5">
-                    {p.monthly != null && <p>{p.monthly.toLocaleString()} ₪/חודש</p>}
-                    {p.total != null && <p>סה״כ: {p.total.toLocaleString()} ₪</p>}
-                    {p.coverage != null && <p>כיסוי: {p.coverage.toLocaleString()} ₪</p>}
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <input
+                        type="number"
+                        value={p.monthly ?? ''}
+                        onChange={e => updateProduct(i, 'monthly', e.target.value)}
+                        placeholder="חודשי"
+                        className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      />
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₪/חודש</span>
+                    </div>
+                    <div className="flex-1 relative">
+                      <input
+                        type="number"
+                        value={p.total ?? ''}
+                        onChange={e => updateProduct(i, 'total', e.target.value)}
+                        placeholder="סה״כ"
+                        className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      />
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₪</span>
+                    </div>
+                    <div className="flex-1 relative">
+                      <input
+                        type="number"
+                        value={p.coverage ?? ''}
+                        onChange={e => updateProduct(i, 'coverage', e.target.value)}
+                        placeholder="כיסוי"
+                        className="w-full text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      />
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₪</span>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-            {content.financial_profile.pension && (
-              <p className="text-xs text-gray-500 mt-3 pt-2 border-t border-gray-100">
-                <span className="font-medium">פנסיה: </span>{content.financial_profile.pension}
-              </p>
-            )}
-            {content.financial_profile.free_capital && (
-              <p className="text-xs text-gray-500 mt-1">
-                <span className="font-medium">כסף פנוי: </span>{content.financial_profile.free_capital}
-              </p>
-            )}
+            <div className="mt-3 pt-2 border-t border-gray-100 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium w-16 shrink-0">פנסיה:</span>
+                <input
+                  value={content.financial_profile.pension ?? ''}
+                  onChange={e => setContent(c => c ? { ...c, financial_profile: { ...c.financial_profile, pension: e.target.value || null } } : c)}
+                  placeholder="פרטי פנסיה"
+                  className="flex-1 text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 font-medium w-16 shrink-0">כסף פנוי:</span>
+                <input
+                  value={content.financial_profile.free_capital ?? ''}
+                  onChange={e => setContent(c => c ? { ...c, financial_profile: { ...c.financial_profile, free_capital: e.target.value || null } } : c)}
+                  placeholder="כסף פנוי"
+                  className="flex-1 text-xs text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+              </div>
+            </div>
           </section>
         )}
 
