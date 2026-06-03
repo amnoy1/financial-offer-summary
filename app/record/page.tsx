@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 type Step = 'setup' | 'recording' | 'uploading' | 'transcribing' | 'done' | 'error'
-type Mode = 'live' | 'memo' | 'text'
+type Mode = 'memo' | 'text'
 
 const STEPS = [
   { key: 'uploading', label: 'מעלה קובץ...' },
@@ -18,7 +18,7 @@ export default function RecordPage() {
   const supabase = createClient()
 
   const [step, setStep] = useState<Step>('setup')
-  const [mode, setMode] = useState<Mode>('live')
+  const [mode, setMode] = useState<Mode>('memo')
   const [clientName, setClientName] = useState('')
   const [clientId, setClientId] = useState<string | null>(null)
   const [clients, setClients] = useState<{ id: string; name: string }[]>([])
@@ -190,7 +190,7 @@ export default function RecordPage() {
 
   if (step === 'recording') return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 bg-gray-50" dir="rtl">
-      <p className="text-gray-500 text-sm mb-2">{mode === 'live' ? 'הקלטה חיה' : 'הערת קול'}</p>
+      <p className="text-gray-500 text-sm mb-2">הקלטת סיכום</p>
       <p className="text-gray-800 font-semibold mb-8">{clientName}</p>
       <div className="text-5xl font-mono font-bold text-gray-900 mb-10 tabular-nums">{formatTime(timer)}</div>
       <div className="relative mb-10">
@@ -243,16 +243,15 @@ export default function RecordPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">סוג קלט</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {([
-              ['live', '🎙️ הקלטה חיה', 'בזמן אמת'],
-              ['memo', '📝 הערת קול', 'אחרי פגישה'],
-              ['text', '📋 הזן טקסט', 'הדבק סיכום'],
+              ['memo', '🎙️ הקלטת סיכום', 'בתום הפגישה'],
+              ['text', '📋 הקלדת סיכום', 'בתום הפגישה'],
             ] as const).map(([val, title, desc]) => (
               <button key={val} onClick={() => setMode(val)}
                 className={`p-3 rounded-xl border-2 text-right transition-colors ${mode === val ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
-                <p className="text-xs font-medium">{title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+                <p className="text-sm font-semibold text-gray-800">{title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
               </button>
             ))}
           </div>
