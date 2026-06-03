@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 
 type Step = 'setup' | 'recording' | 'uploading' | 'transcribing' | 'done' | 'error'
 type Mode = 'memo' | 'text'
+type MeetingType = 'pre_treatment' | 'recommendations' | 'service'
 
 const STEPS = [
   { key: 'uploading', label: 'מעלה קובץ...' },
@@ -24,6 +25,7 @@ export default function RecordPage() {
   const [clients, setClients] = useState<{ id: string; name: string }[]>([])
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string>('')
+  const [meetingType, setMeetingType] = useState<MeetingType>('pre_treatment')
   const [textContent, setTextContent] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [timer, setTimer] = useState(0)
@@ -99,6 +101,7 @@ export default function RecordPage() {
     const formData = new FormData()
     formData.append('audio', blob, 'recording.webm')
     formData.append('mode', mode)
+    formData.append('meeting_type', meetingType)
     if (selectedAgentId) formData.append('agent_id', selectedAgentId)
     if (clientId) {
       formData.append('client_id', clientId)
@@ -128,7 +131,7 @@ export default function RecordPage() {
       setError(`שגיאה בעיבוד: ${err.message}`)
       setStep('error')
     }
-  }, [mode, clientId, clientName, selectedAgentId, router])
+  }, [mode, meetingType, clientId, clientName, selectedAgentId, router])
 
   async function submitText() {
     if (!clientName.trim() || !textContent.trim()) return
@@ -142,6 +145,7 @@ export default function RecordPage() {
           client_id: clientId || null,
           client_name: clientId ? null : clientName,
           text: textContent,
+          meeting_type: meetingType,
         }),
       })
       if (!res.ok) {
@@ -239,6 +243,24 @@ export default function RecordPage() {
             </ul>
           )}
           {clientName && !clientId && <p className="text-xs text-blue-600 mt-1">+ לקוח חדש יווצר</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">סוג הפגישה</label>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              ['pre_treatment', '🗂️', 'טרום טיפול', 'מיפוי מצב קיים'],
+              ['recommendations', '💡', 'סיכום המלצות', 'הצעות וניוד'],
+              ['service', '🔧', 'פגישת שרות', 'טיפול שוטף'],
+            ] as const).map(([val, icon, title, desc]) => (
+              <button key={val} onClick={() => setMeetingType(val)}
+                className={`p-3 rounded-xl border-2 text-right transition-colors ${meetingType === val ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
+                <p className="text-base mb-0.5">{icon}</p>
+                <p className="text-xs font-semibold text-gray-800">{title}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>

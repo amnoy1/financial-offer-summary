@@ -26,6 +26,7 @@ export default function MeetingPage() {
   const supabase = createClient()
 
   const [status, setStatus] = useState<string>('loading')
+  const [meetingType, setMeetingType] = useState<string | null>(null)
   const [content, setContent] = useState<SummaryContent | null>(null)
   const [summaryId, setSummaryId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -43,12 +44,13 @@ export default function MeetingPage() {
   async function loadMeeting() {
     const { data: meeting } = await supabase
       .from('meetings')
-      .select('id, status, summaries(id, content)')
+      .select('id, status, meeting_type, summaries(id, content)')
       .eq('id', id)
       .single()
 
     if (!meeting) { setError('פגישה לא נמצאה'); setStatus('error'); return }
 
+    setMeetingType((meeting as any).meeting_type ?? null)
     const summaries = (meeting.summaries as any[]) ?? []
 
     if (summaries.length > 0) {
@@ -176,7 +178,18 @@ export default function MeetingPage() {
         <div className="flex items-center gap-3">
           <button onClick={() => router.push('/dashboard')} className="text-gray-500 text-lg">→</button>
           <div>
-            <h1 className="font-semibold text-gray-900 text-sm">{content.client.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-gray-900 text-sm">{content.client.name}</h1>
+              {meetingType && (() => {
+                const badges: Record<string, { label: string; cls: string }> = {
+                  pre_treatment: { label: '🗂️ טרום טיפול', cls: 'bg-gray-100 text-gray-600' },
+                  recommendations: { label: '💡 המלצות', cls: 'bg-blue-100 text-blue-700' },
+                  service: { label: '🔧 שרות', cls: 'bg-orange-100 text-orange-700' },
+                }
+                const b = badges[meetingType]
+                return b ? <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${b.cls}`}>{b.label}</span> : null
+              })()}
+            </div>
             <p className="text-xs text-gray-400">{content.client.meeting_date}</p>
           </div>
         </div>

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { agent_id, client_id, client_name, text } = await request.json()
+  const { agent_id, client_id, client_name, text, meeting_type } = await request.json()
 
   if (!text?.trim()) {
     return NextResponse.json({ error: 'טקסט חסר' }, { status: 400 })
@@ -68,7 +68,8 @@ export async function POST(request: NextRequest) {
       client_id: finalClientId,
       meeting_date: new Date().toISOString(),
       transcript: text.trim(),
-      mode: 'memo',
+      mode: 'text',
+      meeting_type: meeting_type || 'pre_treatment',
       status: 'summarizing',
     })
     .select('id')

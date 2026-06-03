@@ -16,7 +16,8 @@ export async function POST(request: NextRequest) {
   const audioFile = formData.get('audio') as File | null
   const clientId = formData.get('client_id') as string | null
   const clientName = formData.get('client_name') as string | null
-  const mode = (formData.get('mode') as string) || 'live'
+  const mode = (formData.get('mode') as string) || 'memo'
+  const meetingType = (formData.get('meeting_type') as string) || 'pre_treatment'
 
   if (!audioFile) {
     return NextResponse.json({ error: 'קובץ אודיו חסר' }, { status: 400 })
@@ -75,6 +76,7 @@ export async function POST(request: NextRequest) {
       meeting_date: new Date().toISOString(),
       recording_url: filename,
       mode,
+      meeting_type: meetingType,
       status: 'transcribing',
     })
     .select('id')

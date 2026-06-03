@@ -1,3 +1,42 @@
+export type MeetingType = 'pre_treatment' | 'recommendations' | 'service'
+
+export const MEETING_TYPE_LABELS: Record<MeetingType, string> = {
+  pre_treatment: 'טרום טיפול',
+  recommendations: 'סיכום המלצות',
+  service: 'פגישת שרות',
+}
+
+function getMeetingTypeInstructions(meetingType: MeetingType): string {
+  switch (meetingType) {
+    case 'pre_treatment':
+      return `סוג פגישה: טרום טיפול — מיפוי מצב קיים.
+הנחיות ייעודיות:
+- התמקד אך ורק במצב הקיים: מוצרים, ביטוחים, פנסיה, חסכונות, כסף פנוי.
+- אל תמליץ על שינויים — זוהי פגישת מיפוי בלבד.
+- ב-recommendations: ציין "פגישת מיפוי — טרם ניתנו המלצות" (אל תמציא המלצות).
+- חפש פערים: כיסוי ביטוחי חסר, כפל כיסויים, מוצרים לא יעילים, דמי ניהול גבוהים — ציין כממצאים ב-topics_discussed.
+- מלא את existing_products בפירוט מרבי.`
+
+    case 'recommendations':
+      return `סוג פגישה: סיכום המלצות — הצעות לשינוי ושיפור.
+הנחיות ייעודיות:
+- התמקד בשינויים המוצעים: ניוד, מוצרים חדשים, הפחתת דמי ניהול, אופטימיזציה.
+- כל המלצה חייבת לכלול: שם המוצר, שם החברה המוצעת, ועלות/חיסכון משוערים אם הוזכרו.
+- הדגש היתרונות: חיסכון בדמי ניהול, שיפור כיסוי, הטבות מס.
+- ב-tax_notes: פרט את הטבות המס הרלוונטיות לכל המלצה (סעיף 47, תיקון 190 וכו').
+- action_items: ממוקדות בהגשת הצעות, חתימות, ביצוע ניוד.`
+
+    case 'service':
+      return `סוג פגישה: פגישת שרות — טיפול שוטף ומעקב.
+הנחיות ייעודיות:
+- תמצת את הנושאים שטופלו, שאלות שנענו, ושינויים שבוצעו בפועל.
+- recommendations: אם לא הוצעו שינויים — החזר מערך ריק [].
+- financial_profile: מלא רק אם נדונו מוצרים ספציפיים, אחרת השאר ריק.
+- action_items: ממוקדות בביצוע פעולות קצרות טווח ומעקב.
+- tax_notes: רלוונטי רק אם נדון מיסוי ספציפי, אחרת [].`
+  }
+}
+
 export const FINANCIAL_SYSTEM_PROMPT = `You are a senior assistant for Israeli insurance and financial agents.
 Your task: analyze a meeting transcript and return a structured JSON summary.
 CRITICAL: Return ONLY valid JSON. No text before or after. No markdown code blocks.
@@ -78,9 +117,17 @@ CRITICAL: Return ONLY valid JSON. No text before or after. No markdown code bloc
   ]
 }`
 
-export function buildUserPrompt(transcript: string, clientName: string, meetingDate: string) {
+export function buildUserPrompt(
+  transcript: string,
+  clientName: string,
+  meetingDate: string,
+  meetingType: MeetingType = 'recommendations',
+) {
+  const typeInstructions = getMeetingTypeInstructions(meetingType)
   return `תאריך פגישה: ${meetingDate}
 שם לקוח: ${clientName}
+
+--- ${typeInstructions} ---
 
 תמליל / תוכן הפגישה:
 ---

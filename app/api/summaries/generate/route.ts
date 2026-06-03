@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
-import { FINANCIAL_SYSTEM_PROMPT, buildUserPrompt } from '@/lib/anthropic/prompt'
+import { FINANCIAL_SYSTEM_PROMPT, buildUserPrompt, MeetingType } from '@/lib/anthropic/prompt'
 import { NextRequest, NextResponse } from 'next/server'
 
 export const maxDuration = 60
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
   const { data: meeting } = await supabase
     .from('meetings')
     .select(`
-      id, transcript, meeting_date, status,
+      id, transcript, meeting_date, status, meeting_type,
       client:clients(name, phone)
     `)
     .eq('id', meeting_id)
@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
 
   const client = meeting.client as unknown as { name: string; phone: string | null } | null
   const meetingDate = new Date(meeting.meeting_date).toISOString().split('T')[0]
+  const meetingType = ((meeting as any).meeting_type as MeetingType) || 'recommendations'
 
   // שלח ל-Claude
   const message = await anthropic.messages.create({
@@ -44,6 +45,7 @@ export async function POST(request: NextRequest) {
           meeting.transcript,
           client?.name ?? 'לא ידוע',
           meetingDate,
+          meetingType,
         ),
       },
     ],
